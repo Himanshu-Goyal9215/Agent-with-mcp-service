@@ -13,6 +13,7 @@
     "real-server": "tsx src/agent/real-mcp-server.ts",
     "enhanced-server": "tsx src/agent/enhanced-mcp-server.ts",
     "firecrawl-server": "tsx src/agent/firecrawl-mcp-server.ts",
+    "composio-server": "tsx src/agent/composio-mcp-server.ts",
     "web-api": "tsx src/agent/web-api-server.ts",
     "test-gemini": "tsx src/agent/test-gemini.ts"
   },

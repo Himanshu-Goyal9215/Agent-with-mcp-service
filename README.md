@@ -1,14 +1,17 @@
-# 🤖 AI Agent with MCP Integration
+# 🤖 AI Agent with Gemini AI and MCP Integration
 
-A powerful AI agent built with [Mastra](https://mastra.ai) that integrates with external MCP (Model Context Protocol) servers to provide web scraping, data extraction, and intelligent task automation capabilities.
+A powerful AI agent built with **Google Gemini AI** that integrates with multiple MCP (Model Context Protocol) servers to provide comprehensive capabilities including web scraping, data extraction, email services, WhatsApp messaging, Slack integration, calendar management, and much more.
 
 ## 🚀 Features
 
-- **AI-Powered Intelligence**: Uses OpenAI models (GPT-4o, GPT-4o-mini) for natural language understanding
-- **MCP Integration**: Connects to external MCP servers for tool access
-- **Web Scraping**: Built-in tools for extracting data from websites
-- **Data Extraction**: Extract emails, URLs, dates, and names from text content
+- **AI-Powered Intelligence**: Uses Google Gemini models (gemini-1.5-flash, gemini-1.5-pro) for natural language understanding
+- **Multi-MCP Integration**: Connects to multiple MCP servers for diverse tool access
+- **Web Scraping**: Advanced tools for extracting data from websites with JavaScript rendering support
+- **Data Extraction**: Extract emails, URLs, dates, names, and other structured data from text content
+- **Communication Tools**: Send emails, WhatsApp messages, and Slack notifications
+- **Productivity Tools**: Calendar management, CRM operations, file storage, and database queries
 - **Interactive CLI**: Command-line interface for easy interaction
+- **Web API**: RESTful API endpoints for integration with other applications
 - **Conversation Memory**: Maintains context across multiple interactions
 - **Tool Execution**: Automatically executes tools based on user requests
 
@@ -18,36 +21,71 @@ The system consists of several key components:
 
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   AI Agent     │    │   MCP Client     │    │  MCP Server    │
-│   (OpenAI)     │◄──►│   (HTTP Client)  │◄──►│  (Express.js)  │
+│   Gemini AI     │    │   MCP Client     │    │  MCP Servers   │
+│     Agent       │◄──►│   (HTTP Client)  │◄──►│  (Multiple)    │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
          │                       │                       │
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│  Conversation   │    │   Tool Registry  │    │  Web Scraping  │
-│    History      │    │   & Execution    │    │  & Extraction  │
+         │                       │                       ▼
+         │                       │              ┌─────────────────┐
+         ▼                       ▼              │  Enhanced MCP   │
+┌─────────────────┐    ┌──────────────────┐    │   (Port 3000)   │
+│  Conversation   │    │   Tool Registry  │    │ Web Scraping    │
+│    History      │    │   & Execution    │    │ Data Extraction │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
+                                │              ┌─────────────────┐
+                                │              │  Firecrawl MCP  │
+                                │              │   (Port 3002)   │
+                                │              │Advanced Scraping│
+                                │              └─────────────────┘
+                                │              ┌─────────────────┐
+                                │              │  Composio MCP   │
+                                │              │   (Port 3003)   │
+                                │              │Email, WhatsApp,│
+                                │              │Slack, Calendar  │
+                                └──────────────┴─────────────────┘
 ```
 
 ### Component Breakdown
 
-1. **AI Agent** (`src/agent/agent.ts`)
-   - Manages conversation flow with OpenAI
+1. **Gemini AI Agent** (`src/agent/gemini-agent.ts`)
+   - Manages conversation flow with Google Gemini AI
    - Handles tool calls and responses
    - Maintains conversation history
+   - Automatically detects and executes relevant tools
 
 2. **MCP Client** (`src/agent/mcp-client.ts`)
    - HTTP client for MCP server communication
    - Discovers available tools and resources
    - Executes tools remotely
 
-3. **Example MCP Server** (`src/agent/example-mcp-server.ts`)
-   - Provides web scraping tools
+3. **Enhanced MCP Server** (`src/agent/enhanced-mcp-server.ts`)
+   - Provides comprehensive web scraping tools
    - Data extraction capabilities
-   - Resource and prompt management
+   - Content analysis and link extraction
+   - Social media and e-commerce scraping
 
-4. **Interactive CLI** (`src/agent/cli.ts`)
+4. **Firecrawl MCP Server** (`src/agent/firecrawl-mcp-server.ts`)
+   - Advanced web scraping with JavaScript rendering
+   - Screenshot capture capabilities
+   - Search and batch processing
+   - Metadata extraction
+
+5. **Composio MCP Server** (`src/agent/composio-mcp-server.ts`)
+   - Email services (Gmail, Outlook, SendGrid)
+   - WhatsApp Business API integration
+   - Slack messaging and notifications
+   - Calendar event management
+   - CRM operations (Salesforce, HubSpot, Pipedrive)
+   - File storage (Google Drive, Dropbox, OneDrive, AWS S3)
+   - Database operations (PostgreSQL, MySQL, MongoDB)
+   - Webhook triggers for automation
+
+6. **Web API Server** (`src/agent/web-api-server.ts`)
+   - RESTful API endpoints
+   - Aggregates all MCP servers
+   - Provides unified interface for external applications
+
+7. **Interactive CLI** (`src/agent/cli.ts`)
    - User-friendly command-line interface
    - Real-time interaction with the AI agent
    - Built-in help and command system
@@ -56,7 +94,7 @@ The system consists of several key components:
 
 1. **Clone and navigate to the project**:
    ```bash
-   cd mastra-notes/notes-app
+   cd mastra-notes/Generic Agent
    ```
 
 2. **Install dependencies**:
@@ -69,34 +107,65 @@ The system consists of several key components:
    cp env.example .env
    ```
    
-   Edit `.env` and add your OpenAI API key:
+   Edit `.env` and add your API keys:
    ```env
-   OPENAI_API_KEY=your_openai_api_key_here
-   OPENAI_MODEL=gpt-4o-mini
-   MCP_SERVER_URL=http://localhost:3000
-   MCP_SERVER_NAME=example-mcp-server
+   # Google Gemini Configuration
+   GOOGLE_API_KEY=your_gemini_api_key_here
+   GEMINI_MODEL=gemini-1.5-flash
+   
+   # Enhanced MCP Server (Port 3000)
+   ENHANCED_MCP_SERVER_PORT=3000
+   
+   # Firecrawl MCP Server (Port 3002)
+   FIRECRAWL_PORT=3002
+   FIRECRAWL_API_KEY=your_firecrawl_api_key_here
+   
+   # Composio MCP Server (Port 3003)
+   COMPOSIO_PORT=3003
+   COMPOSIO_API_KEY=your_composio_api_key_here
+   COMPOSIO_WORKSPACE_ID=your_composio_workspace_id_here
+   
+   # Web API Server (Port 3001)
+   API_PORT=3001
+   
+   # Agent Configuration
    AGENT_NAME=AI Assistant
    AGENT_INSTRUCTIONS=You are a helpful AI assistant that can access web data and perform various tasks.
    ```
 
 ## 🚀 Usage
 
-### Starting the MCP Server
+### Starting the MCP Servers
 
-First, start the example MCP server in one terminal. You can use one of the pre-configured scripts like `npm run enhanced-server`, or run the main example server:
+You can start the servers individually or use the provided scripts:
 
+#### Option 1: Start Enhanced MCP Server (Web Scraping)
 ```bash
-tsx src/agent/example-mcp-server.ts
+npm run enhanced-server
 ```
+This starts a server on port 3000 with web scraping and data extraction tools.
 
-This will start a server on port 3000 with the following tools:
-- `web_scraper`: Scrape content from web URLs
-- `data_extractor`: Extract structured data from text
-- `summarizer`: Summarize long text content
+#### Option 2: Start Firecrawl MCP Server (Advanced Scraping)
+```bash
+npm run firecrawl-server
+```
+This starts a server on port 3002 with JavaScript rendering and advanced scraping capabilities.
+
+#### Option 3: Start Composio MCP Server (Communication & Productivity)
+```bash
+npm run composio-server
+```
+This starts a server on port 3003 with email, WhatsApp, Slack, calendar, and CRM tools.
+
+#### Option 4: Start Web API Server (All-in-One)
+```bash
+npm run web-api
+```
+This starts the main API server on port 3001 that aggregates all MCP servers.
 
 ### Using the Interactive CLI
 
-In another terminal, start the interactive CLI:
+Start the interactive CLI to chat with your AI agent:
 
 ```bash
 npm run cli
@@ -105,24 +174,39 @@ npm run cli
 This will start an interactive session where you can:
 - Chat with the AI agent
 - Use built-in commands (help, clear, history, tools, etc.)
-- Execute web scraping and data extraction tasks
+- Execute various tasks using natural language
 
 ### Example Interactions
 
-1. **Web Scraping**:
-   ```
-   🤖 AI Agent > Scrape the content from https://example.com and summarize it
-   ```
+#### 1. Web Scraping and Data Extraction
+```
+🤖 AI Agent > Scrape the content from https://example.com and extract all email addresses
+```
 
-2. **Data Extraction**:
-   ```
-   🤖 AI Agent > Extract all email addresses from this text: [paste text here]
-   ```
+#### 2. Email Services
+```
+🤖 AI Agent > Send email to user@example.com about project update with message "The project is progressing well"
+```
 
-3. **General Questions**:
-   ```
-   🤖 AI Agent > What can you help me with today?
-   ```
+#### 3. WhatsApp Messaging
+```
+🤖 AI Agent > Send WhatsApp message to +1234567890 saying "Hello! How are you today?"
+```
+
+#### 4. Calendar Management
+```
+🤖 AI Agent > Schedule a meeting for tomorrow at 2 PM about project review
+```
+
+#### 5. Slack Notifications
+```
+🤖 AI Agent > Send Slack message to #general channel about the new feature release
+```
+
+#### 6. CRM Operations
+```
+🤖 AI Agent > Create a new contact for John Doe with email john@example.com and company TechCorp
+```
 
 ### Available Commands
 
@@ -133,6 +217,47 @@ This will start an interactive session where you can:
 - `resources` - List available MCP resources
 - `prompts` - List available MCP prompts
 - `quit/exit/bye` - Exit the CLI
+
+## 🎯 Composio Integration Features
+
+### Email Services
+- **Providers**: Gmail, Outlook, SendGrid, and more
+- **Features**: HTML content, attachments, scheduling, CC/BCC
+- **Use Cases**: Automated notifications, marketing campaigns, customer support
+
+### WhatsApp Business API
+- **Message Types**: Text, image, document, audio, video, templates
+- **Features**: Media support, template variables, delivery status
+- **Use Cases**: Customer service, appointment reminders, order updates
+
+### Slack Integration
+- **Channels**: Public channels, private channels, direct messages
+- **Features**: Rich formatting, attachments, thread replies, block kit
+- **Use Cases**: Team notifications, project updates, alert systems
+
+### Calendar Management
+- **Providers**: Google Calendar, Outlook, and more
+- **Features**: Event creation, scheduling, reminders, attendee management
+- **Use Cases**: Meeting scheduling, appointment booking, event management
+
+### CRM Operations
+- **Systems**: Salesforce, HubSpot, Pipedrive, and more
+- **Features**: Contact management, custom fields, lead tracking
+- **Use Cases**: Lead generation, customer management, sales automation
+
+### File Storage
+- **Providers**: Google Drive, Dropbox, OneDrive, AWS S3
+- **Features**: File upload, sharing settings, tagging, organization
+- **Use Cases**: Document management, backup systems, collaboration
+
+### Database Operations
+- **Databases**: PostgreSQL, MySQL, MongoDB, SQLite, MariaDB
+- **Features**: Query execution, parameterized queries, read/write operations
+- **Use Cases**: Data analysis, reporting, automation workflows
+
+### Webhook Triggers
+- **Features**: Custom payloads, headers, multiple HTTP methods
+- **Use Cases**: System integration, automation triggers, API webhooks
 
 ## 🔧 MCP Integration Explained
 
@@ -154,65 +279,50 @@ The **Model Context Protocol (MCP)** is a standard for AI models to interact wit
    ```
 
 2. **Tool Discovery**:
-   - Agent queries MCP server for available tools
-   - Tools are registered with OpenAI for function calling
+   - Agent queries all MCP servers for available tools
+   - Tools are registered with Gemini AI for function calling
    - Each tool includes name, description, and parameter schema
 
 3. **Tool Execution**:
-   - OpenAI decides when to call tools based on user input
-   - Agent executes tools through MCP client
+   - Gemini AI decides when to call tools based on user input
+   - Agent executes tools through appropriate MCP client
    - Results are incorporated into conversation
 
 4. **Response Generation**:
    - Agent processes tool results
    - Generates final response incorporating tool data
 
-### MCP Server Endpoints
-
-Our example MCP server provides these endpoints:
-
-- `GET /info` - Server information and capabilities
-- `GET /tools` - List available tools
-- `POST /tools/{tool}/execute` - Execute a specific tool
-- `GET /resources` - List available resources
-- `GET /prompts` - List available prompts
-
 ## 🎯 Use Cases
 
-### 1. Web Research
+### 1. Business Automation
+- Automated email campaigns
+- Customer appointment scheduling
+- Lead generation and CRM updates
+- Team notifications and updates
+
+### 2. Web Research & Data Collection
 - Scrape multiple websites for information
 - Extract key data points
 - Generate research summaries
+- Monitor competitor activities
 
-### 2. Content Analysis
+### 3. Content Management
 - Analyze web content for trends
 - Extract structured information
 - Generate insights and reports
+- Content quality assessment
 
-### 3. Data Processing
-- Clean and structure raw data
-- Extract specific data types
-- Transform data formats
+### 4. Customer Service
+- Automated WhatsApp responses
+- Email support ticket management
+- Customer data extraction
+- Service scheduling
 
-### 4. Automated Workflows
-- Multi-step data collection
-- Content summarization
-- Report generation
-
-## 🔍 Example Workflow
-
-Here's how a typical interaction works:
-
-1. **User Request**: "Scrape the latest news from techcrunch.com and summarize the main topics"
-
-2. **AI Analysis**: The agent understands this requires web scraping and summarization
-
-3. **Tool Execution**:
-   - Calls `web_scraper` with techcrunch.com URL
-   - Receives scraped content
-   - Calls `summarizer` with the content
-
-4. **Response Generation**: Agent creates a comprehensive summary of the main tech topics
+### 5. Project Management
+- Team communication via Slack
+- Meeting scheduling and reminders
+- File sharing and collaboration
+- Progress tracking and reporting
 
 ## 🚧 Development
 
@@ -220,20 +330,23 @@ Here's how a typical interaction works:
 
 ```
 src/agent/
-├── index.ts              # Main entry point
-├── agent.ts              # Core AI agent logic
-├── mcp-client.ts         # MCP server communication
-├── cli.ts                # Interactive CLI interface
-├── logger.ts             # Logging utilities
-├── example-mcp-server.ts # Example MCP server
-└── start-server.ts       # Server startup script
+├── index.ts                    # Main entry point
+├── gemini-agent.ts            # Core Gemini AI agent logic
+├── mcp-client.ts              # MCP server communication
+├── cli.ts                     # Interactive CLI interface
+├── logger.ts                  # Logging utilities
+├── enhanced-mcp-server.ts     # Enhanced web scraping MCP server
+├── firecrawl-mcp-server.ts    # Firecrawl advanced scraping MCP server
+├── composio-mcp-server.ts     # Composio integrations MCP server
+├── web-api-server.ts          # Web API server with aggregation
+└── start-server.ts            # Server startup script
 ```
 
 ### Adding New Tools
 
-To add new tools to the MCP server:
+To add new tools to any MCP server:
 
-1. **Define the tool schema** in `example-mcp-server.ts`
+1. **Define the tool schema** in the respective MCP server file
 2. **Implement the execution logic**
 3. **Add the endpoint** to the server
 4. **Test with the agent**
@@ -249,15 +362,16 @@ The agent can be extended by:
 ## 🔐 Security Considerations
 
 - **API Keys**: Never commit API keys to version control
-- **Rate Limiting**: Implement rate limiting for web scraping
+- **Rate Limiting**: Implement rate limiting for external API calls
 - **User Input Validation**: Validate all user inputs
 - **HTTPS**: Use HTTPS in production for MCP server communication
+- **Access Control**: Implement proper authentication for sensitive operations
 
 ## 🐛 Troubleshooting
 
 ### Common Issues
 
-1. **OpenAI API Key Error**:
+1. **Google Gemini API Key Error**:
    - Ensure `.env` file exists with valid API key
    - Check API key permissions and quota
 
@@ -266,7 +380,12 @@ The agent can be extended by:
    - Check firewall settings
    - Ensure server endpoints are accessible
 
-3. **Tool Execution Errors**:
+3. **Composio API Errors**:
+   - Verify COMPOSIO_API_KEY is set correctly
+   - Check COMPOSIO_WORKSPACE_ID configuration
+   - Ensure API key has necessary permissions
+
+4. **Tool Execution Errors**:
    - Check tool parameter schemas
    - Verify MCP server is responding correctly
    - Review server logs for errors
@@ -281,10 +400,10 @@ logger.setLogLevel(LogLevel.DEBUG);
 
 ## 📚 Resources
 
-- [Mastra Framework Documentation](https://mastra.ai)
+- [Google Gemini AI Documentation](https://ai.google.dev/docs)
 - [Model Context Protocol (MCP) Specification](https://modelcontextprotocol.io)
-- [OpenAI API Documentation](https://platform.openai.com/docs)
-- [Apify MCP Server](https://github.com/apify/actor-mastra-mcp-agent)
+- [Composio Platform Documentation](https://docs.composio.dev)
+- [Firecrawl API Documentation](https://firecrawl.dev/docs)
 
 ## 🤝 Contributing
 
@@ -300,11 +419,25 @@ This project is licensed under the ISC License.
 
 ## 🙏 Acknowledgments
 
-- Built with [Mastra](https://mastra.ai) framework
-- Inspired by [Apify's MCP Agent](https://github.com/apify/actor-mastra-mcp-agent)
-- Uses OpenAI's powerful language models
-- Implements the Model Context Protocol standard
+- Built with Google Gemini AI for powerful language understanding
+- Integrates with Composio platform for comprehensive business tools
+- Uses Firecrawl for advanced web scraping capabilities
+- Implements the Model Context Protocol standard for extensibility
 
 ---
 
 **Happy AI Agent Building! 🤖✨**
+
+Your AI agent is now equipped with:
+- 🧠 **Gemini AI** for intelligent conversations
+- 🌐 **Web scraping** for data collection
+- 📧 **Email services** for communication
+- 📱 **WhatsApp integration** for messaging
+- 💬 **Slack integration** for team collaboration
+- 📅 **Calendar management** for scheduling
+- 👥 **CRM operations** for customer management
+- 💾 **File storage** for document management
+- 🗄️ **Database operations** for data processing
+- 🔗 **Webhook triggers** for automation
+
+Start exploring the possibilities! 🚀

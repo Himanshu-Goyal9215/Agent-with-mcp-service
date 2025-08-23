@@ -17,8 +17,123 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public')); // Serve static files
 
+// --- Aggregated MCP client wrapper ---
+// Minimal wrapper implementing the methods used by GeminiAgent: connect(), getAvailableTools(), executeTool()
+class AggregatedMCPClient {
+  private enhancedClient?: MCPClient;
+  private firecrawlClient?: MCPClient;
+  private composioClient?: MCPClient;
+  private logger: Logger;
+
+  constructor(opts: { enhancedClient?: MCPClient; firecrawlClient?: MCPClient; composioClient?: MCPClient }) {
+    this.enhancedClient = opts.enhancedClient;
+    this.firecrawlClient = opts.firecrawlClient;
+    this.composioClient = opts.composioClient;
+    this.logger = new Logger();
+  }
+
+  // connect all clients where possible
+  async connect(): Promise<void> {
+    const connectPromises: Promise<void>[] = [];
+
+    if (this.enhancedClient) {
+      connectPromises.push(this.enhancedClient.connect().catch(err => {
+        this.logger.error('⚠️ Enhanced MCP client connect failed:', err);
+      }));
+    }
+    if (this.firecrawlClient) {
+      connectPromises.push(this.firecrawlClient.connect().catch(err => {
+        this.logger.error('⚠️ Firecrawl MCP client connect failed:', err);
+      }));
+    }
+    if (this.composioClient) {
+      connectPromises.push(this.composioClient.connect().catch(err => {
+        this.logger.error('⚠️ Composio MCP client connect failed:', err);
+      }));
+    }
+
+    // Wait for all attempts but don't throw if one fails — let agent initialize with available tools.
+    await Promise.all(connectPromises);
+  }
+
+  // Merge tools from all servers
+  async getAvailableTools(): Promise<any[]> {
+    const tools: any[] = [];
+
+    try {
+      if (this.enhancedClient) {
+        const enhancedTools = await this.enhancedClient.getAvailableTools().catch(err => {
+          this.logger.error('⚠️ Failed to get tools from enhanced client:', err);
+          return [];
+        });
+        if (Array.isArray(enhancedTools)) tools.push(...enhancedTools);
+      }
+    } catch (e) {
+      this.logger.error('Error fetching enhanced tools', e);
+    }
+
+    try {
+      if (this.firecrawlClient) {
+        const firecrawlTools = await this.firecrawlClient.getAvailableTools().catch(err => {
+          this.logger.error('⚠️ Failed to get tools from firecrawl client:', err);
+          return [];
+        });
+        if (Array.isArray(firecrawlTools)) tools.push(...firecrawlTools);
+      }
+    } catch (e) {
+      this.logger.error('Error fetching firecrawl tools', e);
+    }
+
+    try {
+      if (this.composioClient) {
+        const composioTools = await this.composioClient.getAvailableTools().catch(err => {
+          this.logger.error('⚠️ Failed to get tools from composio client:', err);
+          return [];
+        });
+        if (Array.isArray(composioTools)) tools.push(...composioTools);
+      }
+    } catch (e) {
+      this.logger.error('Error fetching composio tools', e);
+    }
+
+    return tools;
+  }
+
+  // Execute a tool by routing to the appropriate client
+  async executeTool(call: { name: string; arguments?: any }): Promise<any> {
+    const name = call.name || '';
+    
+    // Route to appropriate client based on tool name
+    if (name.startsWith('composio_') && this.composioClient) {
+      return this.composioClient.executeTool(call as any);
+    }
+    
+    if (name.startsWith('firecrawl_') || name.includes('firecrawl')) {
+      if (this.firecrawlClient) {
+      return this.firecrawlClient.executeTool(call as any);
+      }
+    }
+
+    if (this.enhancedClient) {
+      return this.enhancedClient.executeTool(call as any);
+    }
+
+    // fallback: try available clients
+    if (this.composioClient) {
+      return this.composioClient.executeTool(call as any);
+    }
+    
+    if (this.firecrawlClient) {
+      return this.firecrawlClient.executeTool(call as any);
+    }
+
+    throw new Error('No MCP client available to execute the tool: ' + name);
+  }
+}
+
 // Initialize agent
 let agent: GeminiAgent;
+let aggregatedMcpClient: AggregatedMCPClient;
 let isInitialized = false;
 
 async function initializeAgent() {
@@ -27,28 +142,58 @@ async function initializeAgent() {
       throw new Error('GOOGLE_API_KEY environment variable is not set');
     }
 
-    const mcpClient = new MCPClient({
-      serverUrl: process.env.MCP_SERVER_URL || 'http://localhost:3000',
-      serverName: process.env.MCP_SERVER_NAME || 'real-mcp-server',
+    // Create individual MCP clients
+    const enhancedMcpUrl = process.env.MCP_SERVER_URL || 'http://localhost:3000';
+    const enhancedMcpName = process.env.MCP_SERVER_NAME || 'enhanced-mcp-server';
+
+    const firecrawlMcpUrl = process.env.FIRECRAWL_MCP_SERVER_URL || 'http://localhost:3002';
+    const firecrawlMcpName = process.env.FIRECRAWL_MCP_SERVER_NAME || 'firecrawl-mcp-server';
+
+    const composioMcpUrl = process.env.COMPOSIO_MCP_SERVER_URL || 'http://localhost:3003';
+    const composioMcpName = process.env.COMPOSIO_MCP_SERVER_NAME || 'composio-mcp-server';
+
+    const enhancedClient = new MCPClient({
+      serverUrl: enhancedMcpUrl,
+      serverName: enhancedMcpName,
     });
 
+    const firecrawlClient = new MCPClient({
+      serverUrl: firecrawlMcpUrl,
+      serverName: firecrawlMcpName,
+    });
+
+    const composioClient = new MCPClient({
+      serverUrl: composioMcpUrl,
+      serverName: composioMcpName,
+    });
+
+    // Wrap them in the aggregate client
+    aggregatedMcpClient = new AggregatedMCPClient({
+      enhancedClient,
+      firecrawlClient,
+      composioClient,
+    });
+
+    // Pass the aggregated client to the GeminiAgent config so agent can call getAvailableTools and executeTool
     agent = new GeminiAgent({
       googleApiKey: process.env.GOOGLE_API_KEY,
       model: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
       agentName: process.env.AGENT_NAME || 'AI Assistant',
       agentInstructions: process.env.AGENT_INSTRUCTIONS || 'You are a helpful AI assistant that can access web data and perform various tasks.',
-      mcpClient,
+      mcpClient: aggregatedMcpClient as any, // cast to satisfy type if necessary
     });
 
+    // Initialize agent (agent.initialize will call aggregatedMcpClient.connect() and getAvailableTools())
     await agent.initialize();
     isInitialized = true;
-    logger.info('✅ AI Agent initialized successfully');
+    logger.info('✅ AI Agent initialized successfully with aggregated MCP clients');
   } catch (error) {
     logger.error('❌ Failed to initialize agent:', error);
     isInitialized = false;
   }
 }
 
+// ---------- The rest of your file (endpoints) stays the same ----------
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
@@ -112,7 +257,8 @@ app.get('/api/tools', async (req, res) => {
       });
     }
 
-    const tools = await agent['config'].mcpClient.getAvailableTools();
+    // Use aggregatedMcpClient to get tools
+    const tools = await (aggregatedMcpClient.getAvailableTools());
     res.json({
       success: true,
       tools,
@@ -140,18 +286,23 @@ app.post('/api/scrape', async (req, res) => {
     }
 
     logger.info(`🌐 Direct scraping request for: ${url}`);
-    
-    // Use the MCP client directly for scraping
-    const mcpClient = new MCPClient({
-      serverUrl: process.env.MCP_SERVER_URL || 'http://localhost:3000',
-      serverName: process.env.MCP_SERVER_NAME || 'real-mcp-server',
-    });
 
-    await mcpClient.connect();
-    const result = await mcpClient.executeTool({
-      name: 'web_scraper',
-      arguments: { url }
-    });
+    // Choose the tool based on preference / availability.
+    // If you want to always use firecrawl for JS-heavy sites, call firecrawl tool name.
+    // Here we try firecrawl_scraper first, then fallback to web_scraper.
+    let result;
+    try {
+      result = await aggregatedMcpClient.executeTool({
+        name: 'firecrawl_scraper',
+        arguments: { url }
+      });
+    } catch (e) {
+      logger.info('⚠️ firecrawl_scraper failed or unavailable - falling back to web_scraper', e);
+      result = await aggregatedMcpClient.executeTool({
+        name: 'web_scraper',
+        arguments: { url }
+      });
+    }
 
     res.json({
       success: true,
@@ -181,7 +332,15 @@ app.get('/api/status', (req, res) => {
         'Web scraping',
         'Data extraction',
         'Natural language processing',
-        'Conversation memory'
+        'Conversation memory',
+        'Email services',
+        'WhatsApp messaging',
+        'Slack integration',
+        'Calendar management',
+        'CRM operations',
+        'File storage',
+        'Database operations',
+        'Webhook triggers'
       ]
     },
     timestamp: new Date().toISOString()
